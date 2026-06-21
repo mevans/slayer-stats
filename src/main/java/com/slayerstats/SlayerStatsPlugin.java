@@ -55,6 +55,7 @@ public class SlayerStatsPlugin extends Plugin
 	private int lastKnownTasksCompleted = -1;
 	private int lastKnownWildernessTasksCompleted = -1;
 	private int ticksUntilLoginReady = -1;
+	private boolean pendingLoginSync;
 	private boolean slayerXpReady;
 	private boolean slayerVarbitsReady;
 
@@ -69,7 +70,7 @@ public class SlayerStatsPlugin extends Plugin
 		overlayManager.add(overlay);
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
-			prepareForLogin();
+			beginSyncCountdown();
 		}
 	}
 
@@ -95,9 +96,18 @@ public class SlayerStatsPlugin extends Plugin
 			case LOGGING_IN:
 				endSession();
 				resetTrackingState();
+				pendingLoginSync = true;
 				break;
 			case LOGGED_IN:
-				prepareForLogin();
+				if (pendingLoginSync)
+				{
+					pendingLoginSync = false;
+					beginSyncCountdown();
+				}
+				else if (session.isActive())
+				{
+					beginSyncCountdown();
+				}
 				break;
 			case HOPPING:
 			case CONNECTION_LOST:
@@ -247,17 +257,16 @@ public class SlayerStatsPlugin extends Plugin
 		lastKnownTasksCompleted = -1;
 		lastKnownWildernessTasksCompleted = -1;
 		ticksUntilLoginReady = -1;
+		pendingLoginSync = false;
 		slayerXpReady = false;
 		slayerVarbitsReady = false;
 	}
 
-	private void prepareForLogin()
+	private void beginSyncCountdown()
 	{
-		endSession();
-		previousSlayerXp = -1;
-		pendingSlayerXp = -1;
 		slayerXpReady = false;
 		slayerVarbitsReady = false;
+		pendingSlayerXp = -1;
 		ticksUntilLoginReady = LOGIN_SYNC_TICKS;
 	}
 
