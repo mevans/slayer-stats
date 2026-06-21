@@ -1,11 +1,8 @@
 package com.slayerstats;
 
 import com.google.inject.Provides;
-import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.function.IntConsumer;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -18,22 +15,19 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
-import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
-import net.runelite.client.game.ItemManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
 	name = "Slayer Stats",
 	description = "Track slayer session stats such as points gained per hour",
-	tags = {"slayer", "combat", "skilling", "infobox"}
+	tags = {"slayer", "combat", "skilling", "overlay"}
 )
 public class SlayerStatsPlugin extends Plugin
 {
@@ -46,31 +40,35 @@ public class SlayerStatsPlugin extends Plugin
 	private SlayerStatsConfig config;
 
 	@Inject
-	private InfoBoxManager infoBoxManager;
+	private OverlayManager overlayManager;
 
 	@Inject
-	private ItemManager itemManager;
+	private SlayerStatsOverlay overlay;
 
 	private final SlayerSession session = new SlayerSession();
-	private final Map<SlayerStatsInfoBox.StatDisplay, SlayerStatsInfoBox> infoBoxes = new EnumMap<>(SlayerStatsInfoBox.StatDisplay.class);
 
 	private int previousSlayerXp = -1;
 	private int lastKnownSlayerPoints = -1;
 	private int lastKnownTasksCompleted = -1;
 	private int lastKnownWildernessTasksCompleted = -1;
 
+	SlayerSession getSession()
+	{
+		return session;
+	}
+
 	@Override
 	protected void startUp()
 	{
 		previousSlayerXp = client.getSkillExperience(Skill.SLAYER);
 		syncSlayerVarbits();
-		updateInfoBoxes();
+		overlayManager.add(overlay);
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		removeInfoBoxes();
+		overlayManager.remove(overlay);
 		session.end();
 		previousSlayerXp = -1;
 		lastKnownSlayerPoints = -1;
@@ -201,20 +199,6 @@ public class SlayerStatsPlugin extends Plugin
 		}
 	}
 
-	@Subscribe
-	public void onConfigChanged(ConfigChanged event)
-	{
-		if (!SlayerStatsConfig.GROUP_NAME.equals(event.getGroup()))
-		{
-			return;
-		}
-
-		if (event.getKey().startsWith("show") && event.getKey().endsWith("Infobox"))
-		{
-			updateInfoBoxes();
-		}
-	}
-
 	private void trackPositiveDelta(int newValue, int lastKnown, IntConsumer onPositiveDelta, IntConsumer lastKnownUpdater)
 	{
 		if (lastKnown < 0)
@@ -251,7 +235,6 @@ public class SlayerStatsPlugin extends Plugin
 		{
 			session.start(now);
 			log.debug("Started slayer session");
-			updateInfoBoxes();
 		}
 		else
 		{
@@ -264,7 +247,6 @@ public class SlayerStatsPlugin extends Plugin
 		if (!session.isActive())
 		{
 			session.start(Instant.now());
-			updateInfoBoxes();
 		}
 	}
 
@@ -300,71 +282,5 @@ public class SlayerStatsPlugin extends Plugin
 		}
 
 		session.end();
-		removeInfoBoxes();
-	}
-
-	private void updateInfoBoxes()
-	{
-		if (!session.isActive())
-		{
-			removeInfoBoxes();
-			return;
-		}
-
-		BufferedImage icon = itemManager.getImage(ItemID.SLAYER_GEM);
-
-		for (SlayerStatsInfoBox.StatDisplay display : SlayerStatsInfoBox.StatDisplay.values())
-		{
-			updateInfoBox(display, icon, isInfoboxEnabled(display));
-		}
-	}
-
-	private boolean isInfoboxEnabled(SlayerStatsInfoBox.StatDisplay display)
-	{
-		switch (display)
-		{
-			case SESSION_POINTS:
-				return config.showSessionPointsInfobox();
-			case SUPERIORS_SPAWNED:
-				return config.showSuperiorsSpawnedInfobox();
-			case SUPERIORS_PER_HOUR:
-				return config.showSuperiorsPerHourInfobox();
-			case TASKS_COMPLETED:
-				return config.showTasksCompletedInfobox();
-			case TASKS_PER_HOUR:
-				return config.showTasksPerHourInfobox();
-			case POINTS_PER_HOUR:
-			default:
-				return config.showPointsPerHourInfobox();
-		}
-	}
-
-	private void updateInfoBox(SlayerStatsInfoBox.StatDisplay display, BufferedImage icon, boolean enabled)
-	{
-		SlayerStatsInfoBox infoBox = infoBoxes.get(display);
-
-		if (enabled)
-		{
-			if (infoBox == null)
-			{
-				infoBox = new SlayerStatsInfoBox(icon, this, session, config, display);
-				infoBoxes.put(display, infoBox);
-				infoBoxManager.addInfoBox(infoBox);
-			}
-		}
-		else if (infoBox != null)
-		{
-			infoBoxManager.removeInfoBox(infoBox);
-			infoBoxes.remove(display);
-		}
-	}
-
-	private void removeInfoBoxes()
-	{
-		for (SlayerStatsInfoBox infoBox : infoBoxes.values())
-		{
-			infoBoxManager.removeInfoBox(infoBox);
-		}
-		infoBoxes.clear();
 	}
 }

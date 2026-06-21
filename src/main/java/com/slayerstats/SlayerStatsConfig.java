@@ -11,61 +11,71 @@ public interface SlayerStatsConfig extends Config
 	String GROUP_NAME = "slayerstats";
 
 	@ConfigItem(
-		keyName = "showPointsPerHourInfobox",
+		keyName = "showOverlay",
+		name = "Show overlay",
+		description = "Display slayer session stats in an on-screen overlay panel"
+	)
+	default boolean showOverlay()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showPointsPerHour",
 		name = "Show points per hour",
-		description = "Display session slayer points per hour in an infobox"
+		description = "Show session slayer points per hour in the overlay"
 	)
-	default boolean showPointsPerHourInfobox()
+	default boolean showPointsPerHour()
 	{
 		return true;
 	}
 
 	@ConfigItem(
-		keyName = "showSessionPointsInfobox",
+		keyName = "showSessionPoints",
 		name = "Show session points",
-		description = "Display slayer points gained this session in an infobox"
+		description = "Show slayer points gained this session in the overlay"
 	)
-	default boolean showSessionPointsInfobox()
+	default boolean showSessionPoints()
 	{
 		return true;
 	}
 
 	@ConfigItem(
-		keyName = "showSuperiorsSpawnedInfobox",
+		keyName = "showSuperiorsSpawned",
 		name = "Show superiors spawned",
-		description = "Display superior slayer monsters spawned this session in an infobox"
+		description = "Show superior slayer monsters spawned this session in the overlay"
 	)
-	default boolean showSuperiorsSpawnedInfobox()
+	default boolean showSuperiorsSpawned()
 	{
 		return true;
 	}
 
 	@ConfigItem(
-		keyName = "showSuperiorsPerHourInfobox",
+		keyName = "showSuperiorsPerHour",
 		name = "Show superiors per hour",
-		description = "Display superior spawn rate this session in an infobox"
+		description = "Show superior spawn rate this session in the overlay"
 	)
-	default boolean showSuperiorsPerHourInfobox()
+	default boolean showSuperiorsPerHour()
 	{
 		return true;
 	}
 
 	@ConfigItem(
-		keyName = "showTasksCompletedInfobox",
+		keyName = "showTasksCompleted",
 		name = "Show tasks completed",
-		description = "Display slayer tasks completed this session in an infobox"
+		description = "Show slayer tasks completed this session in the overlay"
 	)
-	default boolean showTasksCompletedInfobox()
+	default boolean showTasksCompleted()
 	{
 		return true;
 	}
 
 	@ConfigItem(
-		keyName = "showTasksPerHourInfobox",
+		keyName = "showTasksPerHour",
 		name = "Show tasks per hour",
-		description = "Display slayer task completion rate this session in an infobox"
+		description = "Show slayer task completion rate this session in the overlay"
 	)
-	default boolean showTasksPerHourInfobox()
+	default boolean showTasksPerHour()
 	{
 		return true;
 	}

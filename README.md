@@ -7,7 +7,7 @@ RuneLite plugin that tracks slayer session stats during tasks.
 - Tracks slayer point gains via the `SLAYER_POINTS` varbit (positive deltas only, so spending points is ignored)
 - Starts a session on slayer XP gain
 - Ends the session after a configurable idle period with no slayer XP
-- Shows session stats in infoboxes (points, tasks, superiors — each with count and per-hour toggles)
+- Shows session stats in a text overlay panel (points, tasks, superiors — each line toggled independently)
 
 ## Install (sideload)
 
@@ -19,12 +19,12 @@ cd slayer-stats
 ./gradlew shadowJar
 ```
 
-Copy `build/libs/slayer-stats--all.jar` into your RuneLite sideload folder:
+Copy `build/libs/slayer-stats-unspecified-all.jar` into your RuneLite sideload folder:
 
 - **Windows:** `%USERPROFILE%\.runelite\sideloaded-plugins\`
 - **macOS:** `~/.runelite/sideloaded-plugins/`
 
-Enable **Developer mode** in RuneLite settings, restart the client, then enable **Slayer Stats** in the plugin list.
+Add `--developer-mode` as a client argument in the RuneLite launcher configure window, restart the client, then enable **Slayer Stats** in the plugin list.
 
 ## Development
 
@@ -40,18 +40,19 @@ Build a distributable jar:
 ./gradlew shadowJar
 ```
 
-The jar will be in `build/libs/slayer-stats--all.jar`.
+The jar will be in `build/libs/slayer-stats-unspecified-all.jar`.
 
 ## Configuration
 
 | Setting | Description | Default |
 | --- | --- | --- |
-| Show points per hour | Toggle the points/hour infobox | On |
-| Show session points | Toggle the session points infobox | On |
-| Show superiors spawned | Toggle the superiors spawned infobox | On |
-| Show superiors per hour | Toggle the superiors/hour infobox | On |
-| Show tasks completed | Toggle the tasks completed infobox | On |
-| Show tasks per hour | Toggle the tasks/hour infobox | On |
+| Show overlay | Toggle the on-screen stats panel | On |
+| Show points per hour | Show points/hr line | On |
+| Show session points | Show session points line | On |
+| Show superiors spawned | Show superiors spawned line | On |
+| Show superiors per hour | Show superiors/hr line | On |
+| Show tasks completed | Show tasks completed line | On |
+| Show tasks per hour | Show tasks/hr line | On |
 | Session idle timeout | Minutes without slayer XP before ending session | 5 |
 
 ## License
