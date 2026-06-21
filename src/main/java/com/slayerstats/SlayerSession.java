@@ -26,6 +26,12 @@ class SlayerSession
 	@Getter
 	private int tasksCompleted;
 
+	@Getter
+	private int expeditiousProcs;
+
+	@Getter
+	private int slaughterProcs;
+
 	void start(Instant now)
 	{
 		active = true;
@@ -34,6 +40,8 @@ class SlayerSession
 		pointsGained = 0;
 		superiorsSpawned = 0;
 		tasksCompleted = 0;
+		expeditiousProcs = 0;
+		slaughterProcs = 0;
 	}
 
 	void end()
@@ -63,6 +71,16 @@ class SlayerSession
 		tasksCompleted += count;
 	}
 
+	void addExpeditiousProc()
+	{
+		expeditiousProcs++;
+	}
+
+	void addSlaughterProc()
+	{
+		slaughterProcs++;
+	}
+
 	Duration getActiveDuration()
 	{
 		if (!active || startTime == null)
@@ -86,6 +104,16 @@ class SlayerSession
 	double getTasksPerHour()
 	{
 		return perHour(tasksCompleted);
+	}
+
+	double getExpeditiousPerHour()
+	{
+		return perHour(expeditiousProcs);
+	}
+
+	double getSlaughterPerHour()
+	{
+		return perHour(slaughterProcs);
 	}
 
 	private double perHour(int count)

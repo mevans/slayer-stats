@@ -69,6 +69,26 @@ class SlayerStatsOverlay extends OverlayPanel
 			addLine("Superiors/hr:", String.format("%.1f", session.getSuperiorsPerHour()));
 		}
 
+		if (config.showExpeditiousProcs())
+		{
+			addLine("Expeditious:", Integer.toString(session.getExpeditiousProcs()));
+		}
+
+		if (config.showExpeditiousPerHour())
+		{
+			addLine("Expeditious/hr:", String.format("%.1f", session.getExpeditiousPerHour()));
+		}
+
+		if (config.showSlaughterProcs())
+		{
+			addLine("Slaughter:", Integer.toString(session.getSlaughterProcs()));
+		}
+
+		if (config.showSlaughterPerHour())
+		{
+			addLine("Slaughter/hr:", String.format("%.1f", session.getSlaughterPerHour()));
+		}
+
 		Duration duration = session.getActiveDuration();
 		long minutes = duration.toMinutes();
 		long seconds = duration.minusMinutes(minutes).getSeconds();

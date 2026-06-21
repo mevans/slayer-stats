@@ -81,6 +81,46 @@ public interface SlayerStatsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showExpeditiousProcs",
+		name = "Show expeditious procs",
+		description = "Show expeditious bracelet procs this session in the overlay"
+	)
+	default boolean showExpeditiousProcs()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showExpeditiousPerHour",
+		name = "Show expeditious procs per hour",
+		description = "Show expeditious bracelet proc rate this session in the overlay"
+	)
+	default boolean showExpeditiousPerHour()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showSlaughterProcs",
+		name = "Show slaughter procs",
+		description = "Show bracelet of slaughter procs this session in the overlay"
+	)
+	default boolean showSlaughterProcs()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showSlaughterPerHour",
+		name = "Show slaughter procs per hour",
+		description = "Show bracelet of slaughter proc rate this session in the overlay"
+	)
+	default boolean showSlaughterPerHour()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "sessionIdleTimeout",
 		name = "Session idle timeout",
 		description = "End the slayer session after this many minutes without slayer XP"

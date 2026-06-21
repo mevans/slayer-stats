@@ -32,6 +32,8 @@ import net.runelite.client.util.Text;
 public class SlayerStatsPlugin extends Plugin
 {
 	private static final String CHAT_SUPERIOR_MESSAGE = "A superior foe has appeared...";
+	private static final String CHAT_BRACELET_SLAUGHTER = "Your bracelet of slaughter prevents your slayer";
+	private static final String CHAT_BRACELET_EXPEDITIOUS = "Your expeditious bracelet helps you progress your";
 
 	@Inject
 	private Client client;
@@ -149,12 +151,23 @@ public class SlayerStatsPlugin extends Plugin
 			return;
 		}
 
-		if (!CHAT_SUPERIOR_MESSAGE.equals(Text.removeTags(event.getMessage())))
+		String chatMsg = Text.removeTags(event.getMessage());
+		if (chatMsg.equals(CHAT_SUPERIOR_MESSAGE))
 		{
+			onSuperiorSpawned();
 			return;
 		}
 
-		onSuperiorSpawned();
+		if (chatMsg.startsWith(CHAT_BRACELET_EXPEDITIOUS))
+		{
+			onExpeditiousProc();
+			return;
+		}
+
+		if (chatMsg.startsWith(CHAT_BRACELET_SLAUGHTER))
+		{
+			onSlaughterProc();
+		}
 	}
 
 	@Subscribe
@@ -329,6 +342,30 @@ public class SlayerStatsPlugin extends Plugin
 		session.addSuperior();
 		session.recordXp(Instant.now());
 		log.debug("Superior spawned this session ({} total)", session.getSuperiorsSpawned());
+	}
+
+	private void onExpeditiousProc()
+	{
+		if (!session.isActive())
+		{
+			return;
+		}
+
+		session.addExpeditiousProc();
+		session.recordXp(Instant.now());
+		log.debug("Expeditious bracelet proc this session ({} total)", session.getExpeditiousProcs());
+	}
+
+	private void onSlaughterProc()
+	{
+		if (!session.isActive())
+		{
+			return;
+		}
+
+		session.addSlaughterProc();
+		session.recordXp(Instant.now());
+		log.debug("Slaughter bracelet proc this session ({} total)", session.getSlaughterProcs());
 	}
 
 	private void onTasksCompleted(int count)
