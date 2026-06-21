@@ -47,13 +47,15 @@ public class SlayerStatsPlugin extends Plugin
 
 	private final SlayerSession session = new SlayerSession();
 
-	private static final int VARBIT_SYNC_TICKS = 2;
+	private static final int LOGIN_SYNC_TICKS = 2;
 
 	private int previousSlayerXp = -1;
+	private int pendingSlayerXp = -1;
 	private int lastKnownSlayerPoints = -1;
 	private int lastKnownTasksCompleted = -1;
 	private int lastKnownWildernessTasksCompleted = -1;
-	private int ticksUntilVarbitsReady = -1;
+	private int ticksUntilLoginReady = -1;
+	private boolean slayerXpReady;
 	private boolean slayerVarbitsReady;
 
 	SlayerSession getSession()
@@ -91,6 +93,7 @@ public class SlayerStatsPlugin extends Plugin
 		switch (event.getGameState())
 		{
 			case LOGGING_IN:
+				endSession();
 				resetTrackingState();
 				break;
 			case LOGGED_IN:
@@ -111,13 +114,13 @@ public class SlayerStatsPlugin extends Plugin
 			return;
 		}
 
-		int currentXp = event.getXp();
-		if (previousSlayerXp < 0)
+		if (!slayerXpReady)
 		{
-			previousSlayerXp = currentXp;
+			pendingSlayerXp = event.getXp();
 			return;
 		}
 
+		int currentXp = event.getXp();
 		if (currentXp <= previousSlayerXp)
 		{
 			previousSlayerXp = currentXp;
@@ -184,20 +187,19 @@ public class SlayerStatsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
-		if (ticksUntilVarbitsReady >= 0)
+		if (ticksUntilLoginReady >= 0)
 		{
-			if (ticksUntilVarbitsReady == 0)
+			if (ticksUntilLoginReady == 0)
 			{
-				ticksUntilVarbitsReady = -1;
+				ticksUntilLoginReady = -1;
 				if (client.getGameState() == GameState.LOGGED_IN)
 				{
-					syncSlayerVarbits();
-					slayerVarbitsReady = true;
+					finishLoginSync();
 				}
 			}
 			else
 			{
-				ticksUntilVarbitsReady--;
+				ticksUntilLoginReady--;
 			}
 		}
 
@@ -240,19 +242,34 @@ public class SlayerStatsPlugin extends Plugin
 	private void resetTrackingState()
 	{
 		previousSlayerXp = -1;
+		pendingSlayerXp = -1;
 		lastKnownSlayerPoints = -1;
 		lastKnownTasksCompleted = -1;
 		lastKnownWildernessTasksCompleted = -1;
-		ticksUntilVarbitsReady = -1;
+		ticksUntilLoginReady = -1;
+		slayerXpReady = false;
 		slayerVarbitsReady = false;
 	}
 
 	private void prepareForLogin()
 	{
 		endSession();
-		previousSlayerXp = client.getSkillExperience(Skill.SLAYER);
+		previousSlayerXp = -1;
+		pendingSlayerXp = -1;
+		slayerXpReady = false;
 		slayerVarbitsReady = false;
-		ticksUntilVarbitsReady = VARBIT_SYNC_TICKS;
+		ticksUntilLoginReady = LOGIN_SYNC_TICKS;
+	}
+
+	private void finishLoginSync()
+	{
+		previousSlayerXp = pendingSlayerXp >= 0
+			? pendingSlayerXp
+			: client.getSkillExperience(Skill.SLAYER);
+		pendingSlayerXp = -1;
+		slayerXpReady = true;
+		syncSlayerVarbits();
+		slayerVarbitsReady = true;
 	}
 
 	private void syncSlayerVarbits()
