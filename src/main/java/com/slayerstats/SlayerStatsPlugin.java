@@ -47,10 +47,14 @@ public class SlayerStatsPlugin extends Plugin
 
 	private final SlayerSession session = new SlayerSession();
 
+	private static final int VARBIT_SYNC_TICKS = 2;
+
 	private int previousSlayerXp = -1;
 	private int lastKnownSlayerPoints = -1;
 	private int lastKnownTasksCompleted = -1;
 	private int lastKnownWildernessTasksCompleted = -1;
+	private int ticksUntilVarbitsReady = -1;
+	private boolean slayerVarbitsReady;
 
 	SlayerSession getSession()
 	{
@@ -60,9 +64,11 @@ public class SlayerStatsPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		previousSlayerXp = client.getSkillExperience(Skill.SLAYER);
-		syncSlayerVarbits();
 		overlayManager.add(overlay);
+		if (client.getGameState() == GameState.LOGGED_IN)
+		{
+			prepareForLogin();
+		}
 	}
 
 	@Override
@@ -70,10 +76,7 @@ public class SlayerStatsPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		session.end();
-		previousSlayerXp = -1;
-		lastKnownSlayerPoints = -1;
-		lastKnownTasksCompleted = -1;
-		lastKnownWildernessTasksCompleted = -1;
+		resetTrackingState();
 	}
 
 	@Provides
@@ -88,14 +91,10 @@ public class SlayerStatsPlugin extends Plugin
 		switch (event.getGameState())
 		{
 			case LOGGING_IN:
-				previousSlayerXp = -1;
-				lastKnownSlayerPoints = -1;
-				lastKnownTasksCompleted = -1;
-				lastKnownWildernessTasksCompleted = -1;
+				resetTrackingState();
 				break;
 			case LOGGED_IN:
-				previousSlayerXp = client.getSkillExperience(Skill.SLAYER);
-				syncSlayerVarbits();
+				prepareForLogin();
 				break;
 			case HOPPING:
 			case CONNECTION_LOST:
@@ -148,6 +147,11 @@ public class SlayerStatsPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
+		if (!slayerVarbitsReady)
+		{
+			return;
+		}
+
 		switch (event.getVarbitId())
 		{
 			case VarbitID.SLAYER_POINTS:
@@ -180,6 +184,23 @@ public class SlayerStatsPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		if (ticksUntilVarbitsReady >= 0)
+		{
+			if (ticksUntilVarbitsReady == 0)
+			{
+				ticksUntilVarbitsReady = -1;
+				if (client.getGameState() == GameState.LOGGED_IN)
+				{
+					syncSlayerVarbits();
+					slayerVarbitsReady = true;
+				}
+			}
+			else
+			{
+				ticksUntilVarbitsReady--;
+			}
+		}
+
 		if (!session.isActive() || config.sessionIdleTimeout() <= 0)
 		{
 			return;
@@ -216,6 +237,24 @@ public class SlayerStatsPlugin extends Plugin
 		}
 	}
 
+	private void resetTrackingState()
+	{
+		previousSlayerXp = -1;
+		lastKnownSlayerPoints = -1;
+		lastKnownTasksCompleted = -1;
+		lastKnownWildernessTasksCompleted = -1;
+		ticksUntilVarbitsReady = -1;
+		slayerVarbitsReady = false;
+	}
+
+	private void prepareForLogin()
+	{
+		endSession();
+		previousSlayerXp = client.getSkillExperience(Skill.SLAYER);
+		slayerVarbitsReady = false;
+		ticksUntilVarbitsReady = VARBIT_SYNC_TICKS;
+	}
+
 	private void syncSlayerVarbits()
 	{
 		if (client.getGameState() != GameState.LOGGED_IN)
@@ -242,17 +281,13 @@ public class SlayerStatsPlugin extends Plugin
 		}
 	}
 
-	private void ensureSessionActive()
+	private void onSlayerPointsGained(int points)
 	{
 		if (!session.isActive())
 		{
-			session.start(Instant.now());
+			return;
 		}
-	}
 
-	private void onSlayerPointsGained(int points)
-	{
-		ensureSessionActive();
 		session.addPoints(points);
 		session.recordXp(Instant.now());
 		log.debug("Gained {} slayer points this session ({} total)", points, session.getPointsGained());
@@ -260,7 +295,11 @@ public class SlayerStatsPlugin extends Plugin
 
 	private void onSuperiorSpawned()
 	{
-		ensureSessionActive();
+		if (!session.isActive())
+		{
+			return;
+		}
+
 		session.addSuperior();
 		session.recordXp(Instant.now());
 		log.debug("Superior spawned this session ({} total)", session.getSuperiorsSpawned());
@@ -268,7 +307,11 @@ public class SlayerStatsPlugin extends Plugin
 
 	private void onTasksCompleted(int count)
 	{
-		ensureSessionActive();
+		if (!session.isActive())
+		{
+			return;
+		}
+
 		session.addTasks(count);
 		session.recordXp(Instant.now());
 		log.debug("Completed {} slayer task(s) this session ({} total)", count, session.getTasksCompleted());

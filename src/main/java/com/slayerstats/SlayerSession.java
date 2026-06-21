@@ -6,6 +6,8 @@ import lombok.Getter;
 
 class SlayerSession
 {
+	private static final long MIN_SECONDS_FOR_RATE = 60;
+
 	@Getter
 	private boolean active;
 
@@ -89,7 +91,7 @@ class SlayerSession
 	private double perHour(int count)
 	{
 		long seconds = getActiveDuration().getSeconds();
-		if (seconds <= 0)
+		if (seconds < MIN_SECONDS_FOR_RATE)
 		{
 			return 0;
 		}
